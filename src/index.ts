@@ -1,4 +1,4 @@
-import { HLSConverterOptions } from "./types"
+import { HLSTranscoderOptions } from "./types"
 import { spawn } from 'child_process'
 import DefaultRenditions from "./default-renditions"
 import fs from 'fs'
@@ -6,12 +6,12 @@ import fs from 'fs'
 export default class Transcoder {
   inputPath: string
   outputPath: string
-  options: HLSConverterOptions
+  options: HLSTranscoderOptions
 
   constructor(
     inputPath: string, 
     outputPath: string, 
-    options: HLSConverterOptions) {
+    options: HLSTranscoderOptions) {
       this.inputPath = inputPath
       this.outputPath = outputPath
       this.options = options || {}

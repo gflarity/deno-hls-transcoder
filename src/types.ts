@@ -1,4 +1,4 @@
-export interface HLSConverterOptions {
+export interface HLSTranscoderOptions {
   ffmpegPath?: string
   showLogs?: boolean
   renditions?: Array<RenditionOptions>
