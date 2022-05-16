@@ -109,8 +109,7 @@ export default class Transcoder {
 
   private writePlaylist() {
     return new Promise((resolve) => {
-      let m3u8Playlist = `#EXTM3U
-      #EXT-X-VERSION:3`
+      let m3u8Playlist = `#EXTM3U\n#EXT-X-VERSION:3\n`
 
       const renditions = this.options.renditions || DefaultRenditions
 
@@ -119,7 +118,7 @@ export default class Transcoder {
         m3u8Playlist += `#EXT-X-STREAM-INF:BANDWIDTH=${r.bv.replace(
           'k',
           '000'
-        )},RESOLUTION=${r.width}x${r.height}${r.height}.m3u8`
+        )},RESOLUTION=${r.width}x${r.height}${r.height}.m3u8\n`
       }
 
       const m3u8Path = `${this.outputPath}/index.m3u8`
