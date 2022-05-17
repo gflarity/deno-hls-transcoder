@@ -38,9 +38,6 @@ export default class Transcoder extends EventEmitter {
 
     await this.setMetadata();
 
-    // TODO: deprecate / remove showLogs option in favor of event emitter
-    const showLogs = this.options.showLogs ? this.options.showLogs : false
-
     return new Promise((resolve, reject) => {
       const ffmpeg = this.options.ffmpegPath ? spawn(this.options.ffmpegPath, commands) : spawn('ffmpeg', commands)
 
@@ -48,7 +45,6 @@ export default class Transcoder extends EventEmitter {
       ffmpeg.stderr.on('data', (data: any) => {
         const progressLine = parseProgressLine(data.toString(), this._metadata)
         if (progressLine) {
-          console.log(this._metadata)
           this.emit('progress', progressLine)
         }
 
@@ -59,9 +55,7 @@ export default class Transcoder extends EventEmitter {
       })
 
       ffmpeg.on('exit', (code: any) => {
-        if (showLogs) {
-          console.log(`FFMPEG exited with code ${code}`)
-        }
+        // console.log(`FFMPEG exited with code ${code}`)
         if (code === 0) return resolve(masterPlaylist)
       })
     })
