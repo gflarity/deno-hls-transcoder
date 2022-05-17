@@ -1,6 +1,6 @@
 {
   "name": "hls-transcoder",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A tool to easily convert videos into HLS format",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -9,6 +9,11 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "akatora28",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akatora28/hls-transcoder"
+  },
+  "homepage": "https://github.com/akatora28/hls-transcoder#readme",
   "license": "ISC",
   "devDependencies": {
     "@types/ffprobe": "^1.1.3",
