@@ -1,7 +1,6 @@
 export interface HLSTranscoderOptions {
   ffmpegPath?: string
   ffprobePath?: string
-  showLogs?: boolean
   renditions?: Array<RenditionOptions>
 }
 
