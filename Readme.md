@@ -99,4 +99,5 @@ ___
 ## Ongoing TODOS:
 * ~~Progress Bar~~
 * Add option for outputPath param per Rendition
-* Add option for Renditions per Resolution
+* Add option for Renditions per Resolution  
+* Fix ffmpeg stderr and stdout processing / parsing
