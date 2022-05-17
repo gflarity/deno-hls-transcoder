@@ -101,3 +101,5 @@ ___
 * Add option for outputPath param per Rendition
 * Add option for Renditions per Resolution  
 * Fix ffmpeg stderr and stdout processing / parsing
+* Create dir automatically if doesn't exist?
+* Option to enable / disable overwrite?
