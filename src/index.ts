@@ -1,18 +1,21 @@
-import { HLSTranscoderOptions } from './types'
+import { HLSTranscoderOptions, VideoMetadata } from './types'
 import { spawn } from 'child_process'
 import DefaultRenditions from './default-renditions'
 import fs from 'fs'
+import EventEmitter from 'events'
+import ffprobe from 'ffprobe'
 
-export default class Transcoder {
+import { parseProgressLine, parseErrorLine } from './utils'
+
+export default class Transcoder extends EventEmitter {
   inputPath: string
   outputPath: string
   options: HLSTranscoderOptions
 
-  constructor(
-    inputPath: string,
-    outputPath: string,
-    options: HLSTranscoderOptions = {}
-  ) {
+  private _metadata: VideoMetadata = {}
+
+  constructor(inputPath: string, outputPath: string, options: HLSTranscoderOptions = {}) {
+    super()
     this.inputPath = inputPath
     this.outputPath = outputPath
     this.options = options
@@ -33,28 +36,31 @@ export default class Transcoder {
       return err
     }
 
+    await this.setMetadata();
+
+    // TODO: deprecate / remove showLogs option in favor of event emitter
     const showLogs = this.options.showLogs ? this.options.showLogs : false
 
     return new Promise((resolve, reject) => {
-      const ffmpeg = this.options.ffmpegPath
-        ? spawn(this.options.ffmpegPath, commands)
-        : spawn('ffmpeg', commands)
+      const ffmpeg = this.options.ffmpegPath ? spawn(this.options.ffmpegPath, commands) : spawn('ffmpeg', commands)
 
-      ffmpeg.stdout.on('data', (data: any) => {
-        if (showLogs) {
-          console.log(data.toString())
-        }
-      })
-
+      // FFMPEG logs to stderr, not stdout
       ffmpeg.stderr.on('data', (data: any) => {
-        if (showLogs) {
-          console.log(data.toString())
+        const progressLine = parseProgressLine(data.toString(), this._metadata)
+        if (progressLine) {
+          console.log(this._metadata)
+          this.emit('progress', progressLine)
+        }
+
+        const errorLine = parseErrorLine(data.toString())
+        if (errorLine) {
+          this.emit('error', errorLine)
         }
       })
 
       ffmpeg.on('exit', (code: any) => {
         if (showLogs) {
-          console.log(`Child exited with code ${code}`)
+          console.log(`FFMPEG exited with code ${code}`)
         }
         if (code === 0) return resolve(masterPlaylist)
       })
@@ -63,7 +69,16 @@ export default class Transcoder {
 
   private buildCommands(): Promise<string[]> {
     return new Promise((resolve) => {
-      let commands: Array<string> = ['-hide_banner', '-y', '-i', this.inputPath]
+      let commands: Array<string> = [
+        '-hide_banner',
+        '-progress',
+        `-`,
+        '-loglevel',
+        'repeat+level+verbose',
+        '-y',
+        '-i',
+        this.inputPath
+      ]
       const renditions = this.options.renditions || DefaultRenditions
 
       for (let i = 0, len = renditions.length; i < len; i++) {
@@ -109,23 +124,37 @@ export default class Transcoder {
 
   private writePlaylist() {
     return new Promise((resolve) => {
-      let m3u8Playlist = `#EXTM3U
-      #EXT-X-VERSION:3`
+      let m3u8Playlist = `#EXTM3U\n#EXT-X-VERSION:3\n`
 
       const renditions = this.options.renditions || DefaultRenditions
 
       for (let i = 0, len = renditions.length; i < len; i++) {
         const r = renditions[i]
-        m3u8Playlist += `#EXT-X-STREAM-INF:BANDWIDTH=${r.bv.replace(
-          'k',
-          '000'
-        )},RESOLUTION=${r.width}x${r.height}${r.height}.m3u8`
+        m3u8Playlist += `#EXT-X-STREAM-INF:BANDWIDTH=${r.bv.replace('k', '000')},RESOLUTION=${r.width}x${r.height}${
+          r.height
+        }.m3u8\n`
       }
 
       const m3u8Path = `${this.outputPath}/index.m3u8`
       fs.writeFileSync(m3u8Path, m3u8Playlist)
 
       resolve(m3u8Path)
+    })
+  }
+
+  private async setMetadata(): Promise<void> {
+    const ffprobePath = this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe';
+    const ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
+
+    return new Promise((resolve) => {
+      if(ffprobeData.streams[0].codec_name) {
+        this._metadata.codec_name = ffprobeData.streams[0].codec_name
+      }
+      if(ffprobeData.streams[0].duration) {
+        this._metadata.duration = ffprobeData.streams[0].duration
+      }
+    
+      resolve()
     })
   }
 }

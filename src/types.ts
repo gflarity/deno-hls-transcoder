@@ -1,5 +1,6 @@
 export interface HLSTranscoderOptions {
   ffmpegPath?: string
+  ffprobePath?: string
   showLogs?: boolean
   renditions?: Array<RenditionOptions>
 }
@@ -15,4 +16,11 @@ export interface RenditionOptions {
   ba: string
   ts_title: string
   master_title: string
+}
+
+export interface VideoMetadata {
+  codec_name?: string
+  width?: number
+  height?: number
+  duration?: number
 }
