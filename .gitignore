@@ -40,3 +40,6 @@ lib/**/*
 
 # ignore yarn.lock
 yarn.lock
+
+# Just in case the tests don't delete output files for some reason
+tests/output/
