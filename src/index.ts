@@ -124,9 +124,7 @@ export default class Transcoder extends EventEmitter {
 
       for (let i = 0, len = renditions.length; i < len; i++) {
         const r = renditions[i]
-        m3u8Playlist += `#EXT-X-STREAM-INF:BANDWIDTH=${r.bv.replace('k', '000')},RESOLUTION=${r.width}x${r.height}${
-          r.height
-        }.m3u8\n`
+        m3u8Playlist += `#EXT-X-STREAM-INF:BANDWIDTH=${r.bv.replace('k', '000')},RESOLUTION=${r.width}x${r.height}.m3u8\n`
       }
 
       const m3u8Path = `${this.outputPath}/index.m3u8`
