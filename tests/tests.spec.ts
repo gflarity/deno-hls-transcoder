@@ -30,6 +30,6 @@ test.group('Transcode.default', async () => {
       await clearOutputFolder()
     })
     .teardown(async () => {
-      // await clearOutputFolder()
+      await clearOutputFolder()
     })
 })
