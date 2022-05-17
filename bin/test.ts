@@ -22,6 +22,7 @@ configure({
     plugins: [assert()],
     reporters: [specReporter()],
     importer: (filePath) => import(filePath),
+    timeout: 60000, // Set to 1 minute, might need to be longer though
   },
 })
 
