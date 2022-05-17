@@ -1,8 +1,9 @@
-import { HLSTranscoderOptions } from './types'
+import { HLSTranscoderOptions, VideoMetadata } from './types'
 import { spawn } from 'child_process'
 import DefaultRenditions from './default-renditions'
 import fs from 'fs'
 import EventEmitter from 'events'
+import ffprobe from 'ffprobe'
 
 import { parseProgressLine, parseErrorLine } from './utils'
 
@@ -10,6 +11,8 @@ export default class Transcoder extends EventEmitter {
   inputPath: string
   outputPath: string
   options: HLSTranscoderOptions
+
+  private _metadata: VideoMetadata = {}
 
   constructor(inputPath: string, outputPath: string, options: HLSTranscoderOptions = {}) {
     super()
@@ -33,6 +36,9 @@ export default class Transcoder extends EventEmitter {
       return err
     }
 
+    await this.setMetadata();
+
+    // TODO: deprecate / remove showLogs option in favor of event emitter
     const showLogs = this.options.showLogs ? this.options.showLogs : false
 
     return new Promise((resolve, reject) => {
@@ -40,8 +46,9 @@ export default class Transcoder extends EventEmitter {
 
       // FFMPEG logs to stderr, not stdout
       ffmpeg.stderr.on('data', (data: any) => {
-        const progressLine = parseProgressLine(data.toString())
+        const progressLine = parseProgressLine(data.toString(), this._metadata)
         if (progressLine) {
+          console.log(this._metadata)
           this.emit('progress', progressLine)
         }
 
@@ -132,6 +139,22 @@ export default class Transcoder extends EventEmitter {
       fs.writeFileSync(m3u8Path, m3u8Playlist)
 
       resolve(m3u8Path)
+    })
+  }
+
+  private async setMetadata(): Promise<void> {
+    const ffprobePath = this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe';
+    const ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
+
+    return new Promise((resolve) => {
+      if(ffprobeData.streams[0].codec_name) {
+        this._metadata.codec_name = ffprobeData.streams[0].codec_name
+      }
+      if(ffprobeData.streams[0].duration) {
+        this._metadata.duration = ffprobeData.streams[0].duration
+      }
+    
+      resolve()
     })
   }
 }

@@ -1,3 +1,5 @@
+import { VideoMetadata } from "./types"
+
 // borrowed from https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
 /**
  * Parse progress line from ffmpeg stderr
@@ -6,24 +8,29 @@
  * @return progress object
  * @private
  */
-export function parseProgressLine(line: any) {
-  let progress: any = {}
+export function parseProgressLine(line: any, _metadata: VideoMetadata) {
+  const progress: any = {}
 
   // Remove all spaces after = and trim
   line = line.replace(/=\s+/g, '=').trim()
-  let progressParts = line.split(' ')
+  const progressParts = line.split(' ')
 
   // Split every progress part by "=" to get key and value
-  for (var i = 0; i < progressParts.length; i++) {
-    var progressSplit = progressParts[i].split('=', 2)
-    var key = progressSplit[0]
-    var value = progressSplit[1]
+  for (let i = 0; i < progressParts.length; i++) {
+    const progressSplit = progressParts[i].split('=', 2)
+    const key = progressSplit[0]
+    const value = progressSplit[1]
 
     // This is not a progress line
     if (typeof value === 'undefined') return null
 
     progress[key] = value
   }
+
+  const progressSeconds = timemarkToSeconds(progress["time"])
+  const durationSeconds = _metadata.duration ? _metadata.duration : 1
+
+  progress["progress_pct"] = ((progressSeconds / durationSeconds) * 100).toFixed(2)
 
   return progress
 }
@@ -65,11 +72,45 @@ function extractProgress(command, stderrLine) {
  * Parse error line from ffmpeg stderr
  * @param line
  */
-export function parseErrorLine(line: string) {
-  let error: any = {}
+  export function parseErrorLine(line: string) {
+    let error: any = {}
 
-  // Remove all spaces
-  if (line.includes('[error] ')) {
-    return line.replace('[error] ', '')
+    // Remove all spaces
+    if (line.includes('[error] ')) {
+      return line.replace('[error] ', '')
+    }
   }
+
+/**
+ * Convert a [[hh:]mm:]ss[.xxx] timemark into seconds
+ *
+ * @param {String} timemark timemark string
+ * @return Number
+ * @private
+ */
+  function timemarkToSeconds(timemark: string) {
+  if (typeof timemark === 'number') {
+    return timemark;
+  }
+
+  if (timemark.indexOf(':') === -1 && timemark.indexOf('.') >= 0) {
+    return Number(timemark);
+  }
+
+  const parts = timemark.split(':');
+
+  // add seconds
+  let secs = Number(parts.pop());
+
+  if (parts.length) {
+    // add minutes
+    secs += Number(parts.pop()) * 60;
+  }
+
+  if (parts.length) {
+    // add hours
+    secs += Number(parts.pop()) * 3600;
+  }
+
+  return secs;
 }
