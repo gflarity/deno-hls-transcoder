@@ -1,0 +1,35 @@
+import { test } from '@japa/runner'
+
+import Transcoder  from '../src/index'
+import ffmpeg from '@ffmpeg-installer/ffmpeg'
+const ffprobe = require('@ffprobe-installer/ffprobe')
+
+import { clearOutputFolder } from './_test.utils'
+
+// What tests to do
+// test .mov, .avi, etc
+// test that video renditions don't upsample
+
+// Use 1080p version to test default renditions
+test.group('Transcode.default', async () => {
+  test('transcode default renditions', async ({ assert }) => {
+    // Test logic goes here
+    const transcoder = new Transcoder(
+      `tests/videos/BigBuckBunny1080p30s.mp4`,
+      `${__dirname}/output`,
+      {
+        ffmpegPath: ffmpeg.path,
+        ffprobePath: ffprobe.path,
+      }
+    )
+
+    await transcoder.transcode()
+  
+    // assert.equal(2 + 2, 4)
+  }).setup(async () => {
+      await clearOutputFolder()
+    })
+    .teardown(async () => {
+      // await clearOutputFolder()
+    })
+})

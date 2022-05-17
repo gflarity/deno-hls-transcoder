@@ -6,7 +6,7 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node -r ts-node/register bin/test.ts"
   },
   "author": "akatora28",
   "repository": {
@@ -16,10 +16,16 @@
   "homepage": "https://github.com/akatora28/hls-transcoder#readme",
   "license": "ISC",
   "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^1.4.1",
+    "@japa/assert": "^1.3.4",
+    "@japa/runner": "^2.0.8",
+    "@japa/spec-reporter": "^1.1.12",
     "@types/ffprobe": "^1.1.3",
     "@typescript-eslint/eslint-plugin": "^5.24.0",
     "@typescript-eslint/parser": "^5.24.0",
-    "eslint": "^8.15.0"
+    "eslint": "^8.15.0",
+    "ts-node": "^10.7.0"
   },
   "dependencies": {
     "@types/node": "^17.0.33",
