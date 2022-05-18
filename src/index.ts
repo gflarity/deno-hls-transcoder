@@ -29,11 +29,7 @@ export default class Transcoder extends EventEmitter {
       return err
     }
 
-<<<<<<< HEAD
     let masterPlaylist: string
-=======
-    let masterPlaylist: Promise<string>
->>>>>>> stderr-fixes
     try {
       masterPlaylist = await this.writePlaylist()
     } catch (err) {
