@@ -5,7 +5,7 @@ import fs from 'fs'
 import EventEmitter from 'events'
 import ffprobe from 'ffprobe'
 
-import { parseProgressLine, parseErrorLine } from './utils'
+import { parseProgressLine, parseErrorLine, parseProgressStdout } from './utils'
 
 export default class Transcoder extends EventEmitter {
   inputPath: string
@@ -29,7 +29,11 @@ export default class Transcoder extends EventEmitter {
       return err
     }
 
-    let masterPlaylist: any
+<<<<<<< HEAD
+    let masterPlaylist: string
+=======
+    let masterPlaylist: Promise<string>
+>>>>>>> stderr-fixes
     try {
       masterPlaylist = await this.writePlaylist()
     } catch (err) {
@@ -41,17 +45,22 @@ export default class Transcoder extends EventEmitter {
     return new Promise((resolve, reject) => {
       const ffmpeg = this.options.ffmpegPath ? spawn(this.options.ffmpegPath, commands) : spawn('ffmpeg', commands)
 
-      // FFMPEG logs to stderr, not stdout
-      ffmpeg.stderr.on('data', (data: any) => {
-        const progressLine = parseProgressLine(data.toString(), this._metadata)
+      ffmpeg.stdout.setEncoding('utf8')
+      ffmpeg.stdout.on('data', (data: any) => {
+        const progressLine = parseProgressStdout(data, this._metadata)
         if (progressLine) {
           this.emit('progress', progressLine)
         }
+      })
 
-        const errorLine = parseErrorLine(data.toString())
+      ffmpeg.stderr.setEncoding('utf8')
+      ffmpeg.stderr.on('data', (data: any) => {
+        /* TODO - this needs to be reimplemented
+        const errorLine = parseErrorLine(data)
         if (errorLine) {
           this.emit('error', errorLine)
         }
+        */
       })
 
       ffmpeg.on('exit', (code: any) => {
@@ -66,9 +75,10 @@ export default class Transcoder extends EventEmitter {
       let commands: Array<string> = [
         '-hide_banner',
         '-progress',
+        //'pipe:1', // send to stdout - sends every second
         `-`,
         '-loglevel',
-        'repeat+level+verbose',
+        'repeat+error',
         '-y',
         '-i',
         this.inputPath
@@ -116,7 +126,7 @@ export default class Transcoder extends EventEmitter {
     })
   }
 
-  private writePlaylist() {
+  private writePlaylist(): Promise<string> {
     return new Promise((resolve) => {
       let m3u8Playlist = `#EXTM3U\n#EXT-X-VERSION:3\n`
 
