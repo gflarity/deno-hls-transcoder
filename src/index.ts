@@ -29,7 +29,7 @@ export default class Transcoder extends EventEmitter {
       return err
     }
 
-    let masterPlaylist: any
+    let masterPlaylist: Promise<string>
     try {
       masterPlaylist = await this.writePlaylist()
     } catch (err) {
@@ -116,7 +116,7 @@ export default class Transcoder extends EventEmitter {
     })
   }
 
-  private writePlaylist() {
+  private writePlaylist(): Promise<string> {
     return new Promise((resolve) => {
       let m3u8Playlist = `#EXTM3U\n#EXT-X-VERSION:3\n`
 
