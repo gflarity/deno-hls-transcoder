@@ -4,6 +4,7 @@ import DefaultRenditions from './default-renditions'
 import fs from 'fs'
 import EventEmitter from 'events'
 import ffprobe from 'ffprobe'
+import commandExists from 'command-exists'
 
 import { parseProgressStdout } from './utils'
 
@@ -36,7 +37,25 @@ export default class Transcoder extends EventEmitter {
       return err
     }
 
-    await this.setMetadata();
+    // This is hideous - fix later
+    /*
+    try {
+      await this.validatePaths(
+        this.options.ffmpegPath ? this.options.ffmpegPath : 'ffmpeg', 
+        this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe',
+      )
+    } catch (err: any) {
+      throw this.emit('error', new Error(err))
+    }
+    */
+    await this.validatePaths(
+      this.options.ffmpegPath ? this.options.ffmpegPath : 'ffmpeg', 
+      this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe',
+    )
+
+    console.log("now here")
+    console.log("still going")
+    await this.setMetadata()
 
     return new Promise((resolve, reject) => {
       const ffmpeg = this.options.ffmpegPath ? spawn(this.options.ffmpegPath, commands) : spawn('ffmpeg', commands)
@@ -146,7 +165,13 @@ export default class Transcoder extends EventEmitter {
 
   private async setMetadata(): Promise<void> {
     const ffprobePath = this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe';
-    const ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
+    let ffprobeData: ffprobe.FFProbeResult
+    try {
+      ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
+    } catch (err) {
+      throw new Error()
+    }
+    // const ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
 
     return new Promise((resolve) => {
       if(ffprobeData.streams[0].codec_name) {
@@ -158,5 +183,31 @@ export default class Transcoder extends EventEmitter {
     
       resolve()
     })
+  }
+
+  /**
+   * Validates that the supplied ffmpegPath and ffprobePaths exist 
+   * @param ffmpegPath 
+   * @param ffprobePath 
+   * @returns void
+   */
+  private async validatePaths(ffmpegPath: string, ffprobePath: string): Promise<void> {
+    const ffmpegExists = await commandExists(ffmpegPath).catch(() => {return})
+    const ffprobeExists = await commandExists(ffprobePath).catch(() => {return})
+
+    return new Promise((resolve) => {
+      if (!ffmpegExists && !ffprobeExists) {
+        return this.emit('error', new Error('Invalid ffmpeg and ffprobe PATH'))
+      }
+      if (!ffmpegExists) {
+        return this.emit('error', new Error('Invalid ffmpeg PATH'))
+      }
+      if (!ffprobeExists) {
+        return this.emit('error', new Error('Invalid ffprobe PATH'))
+      }
+
+      resolve()
+    })
+
   }
 }
