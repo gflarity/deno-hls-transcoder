@@ -2,6 +2,7 @@ export interface HLSTranscoderOptions {
   ffmpegPath?: string
   ffprobePath?: string
   renditions?: Array<RenditionOptions>
+  allowUpscaling?: boolean
 }
 
 export interface RenditionOptions {
