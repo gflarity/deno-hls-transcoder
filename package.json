@@ -6,7 +6,10 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "node -r ts-node/register bin/test.ts"
+    "test": "node -r ts-node/register bin/test.ts",
+    "prepare": "npm run build",
+    "version": "npm run build && git add -A src lib",
+    "postversion": "git push && git push --tags"
   },
   "author": "Adam Katora <adamkatora@gmail.com> (https://github.com/akatora28)",
   "repository": {

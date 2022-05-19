@@ -37,24 +37,12 @@ export default class Transcoder extends EventEmitter {
       return err
     }
 
-    // This is hideous - fix later
-    /*
-    try {
-      await this.validatePaths(
-        this.options.ffmpegPath ? this.options.ffmpegPath : 'ffmpeg', 
-        this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe',
-      )
-    } catch (err: any) {
-      throw this.emit('error', new Error(err))
-    }
-    */
+    // This is hideous - fix later possibly via a private property object
     await this.validatePaths(
       this.options.ffmpegPath ? this.options.ffmpegPath : 'ffmpeg', 
       this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe',
     )
 
-    console.log("now here")
-    console.log("still going")
     await this.setMetadata()
 
     return new Promise((resolve, reject) => {
