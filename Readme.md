@@ -1,5 +1,7 @@
 # HLS Transcoder
 
+**THIS PACKAGE IS STILL UNDER ACTIVE DEVELOPMENT, API CHANGES CAN AND LIKELY WILL HAPPEN REGARDLESS OF WETHER THEY ARE DOCUMENTED BELOW**
+
 An FFMPEG Wrapper heavily inspired by [simple-hls](https://github.com/techwarriorz/simple-hls), to transcode Multi-bitrate HLS videos.  
 
 ## Installation:  
@@ -127,5 +129,8 @@ ___
 * Add option for outputPath param per Rendition
 * Add option for Renditions per Resolution  
 * Fix ffmpeg stderr and stdout processing / parsing
+  * Currently in progress
+* Test and/or handle .ts file name overflows
+  * ie. '1080p_0.ts' where number of ts segments > 10
 * Create dir automatically if doesn't exist?
 * Option to enable / disable overwrite?
