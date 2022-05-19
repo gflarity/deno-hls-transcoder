@@ -23,6 +23,11 @@ test.group('Transcode.default', async () => {
       }
     )
 
+    transcoder.on('error', (err) => {
+      console.error(err)
+      throw err
+    })
+
     await transcoder.transcode()
   
     // assert.equal(2 + 2, 4)

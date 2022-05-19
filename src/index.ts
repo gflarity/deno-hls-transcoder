@@ -4,8 +4,9 @@ import DefaultRenditions from './default-renditions'
 import fs from 'fs'
 import EventEmitter from 'events'
 import ffprobe from 'ffprobe'
+import commandExists from 'command-exists'
 
-import { parseProgressLine, parseErrorLine } from './utils'
+import { parseProgressStdout } from './utils'
 
 export default class Transcoder extends EventEmitter {
   inputPath: string
@@ -29,33 +30,48 @@ export default class Transcoder extends EventEmitter {
       return err
     }
 
-    let masterPlaylist: any
+    let masterPlaylist: string
     try {
       masterPlaylist = await this.writePlaylist()
     } catch (err) {
       return err
     }
 
-    await this.setMetadata();
+    // This is hideous - fix later possibly via a private property object
+    await this.validatePaths(
+      this.options.ffmpegPath ? this.options.ffmpegPath : 'ffmpeg', 
+      this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe',
+    )
+
+    await this.setMetadata()
 
     return new Promise((resolve, reject) => {
       const ffmpeg = this.options.ffmpegPath ? spawn(this.options.ffmpegPath, commands) : spawn('ffmpeg', commands)
-
-      // FFMPEG logs to stderr, not stdout
-      ffmpeg.stderr.on('data', (data: any) => {
-        const progressLine = parseProgressLine(data.toString(), this._metadata)
+      
+      /**
+       * stdout processing for progress
+       */
+      ffmpeg.stdout.setEncoding('utf8')
+      ffmpeg.stdout.on('data', (data: any) => {
+        const progressLine = parseProgressStdout(data, this._metadata)
         if (progressLine) {
           this.emit('progress', progressLine)
         }
+      })
 
-        const errorLine = parseErrorLine(data.toString())
-        if (errorLine) {
-          this.emit('error', errorLine)
-        }
+      /**
+       * stderr processing for all other ffmpeg information
+       */
+      ffmpeg.stderr.setEncoding('utf8')
+      ffmpeg.stderr.on('data', (data: any) => {
+        this.emit('stderr', data)
+      })
+      ffmpeg.stderr.on('error', (err: any) => {
+        this.emit('error', err)
       })
 
       ffmpeg.on('exit', (code: any) => {
-        // console.log(`FFMPEG exited with code ${code}`)
+        this.emit('end', (`FFMPEG exited with code ${code}`))
         if (code === 0) return resolve(masterPlaylist)
       })
     })
@@ -65,10 +81,10 @@ export default class Transcoder extends EventEmitter {
     return new Promise((resolve) => {
       let commands: Array<string> = [
         '-hide_banner',
-        '-progress',
+        '-progress', // TODO make progress optional?
         `-`,
         '-loglevel',
-        'repeat+level+verbose',
+        'repeat+error',
         '-y',
         '-i',
         this.inputPath
@@ -116,7 +132,7 @@ export default class Transcoder extends EventEmitter {
     })
   }
 
-  private writePlaylist() {
+  private writePlaylist(): Promise<string> {
     return new Promise((resolve) => {
       let m3u8Playlist = `#EXTM3U\n#EXT-X-VERSION:3\n`
 
@@ -137,7 +153,13 @@ export default class Transcoder extends EventEmitter {
 
   private async setMetadata(): Promise<void> {
     const ffprobePath = this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe';
-    const ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
+    let ffprobeData: ffprobe.FFProbeResult
+    try {
+      ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
+    } catch (err) {
+      throw new Error()
+    }
+    // const ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
 
     return new Promise((resolve) => {
       if(ffprobeData.streams[0].codec_name) {
@@ -149,5 +171,31 @@ export default class Transcoder extends EventEmitter {
     
       resolve()
     })
+  }
+
+  /**
+   * Validates that the supplied ffmpegPath and ffprobePaths exist 
+   * @param ffmpegPath 
+   * @param ffprobePath 
+   * @returns void
+   */
+  private async validatePaths(ffmpegPath: string, ffprobePath: string): Promise<void> {
+    const ffmpegExists = await commandExists(ffmpegPath).catch(() => {return})
+    const ffprobeExists = await commandExists(ffprobePath).catch(() => {return})
+
+    return new Promise((resolve) => {
+      if (!ffmpegExists && !ffprobeExists) {
+        return this.emit('error', new Error('Invalid ffmpeg and ffprobe PATH'))
+      }
+      if (!ffmpegExists) {
+        return this.emit('error', new Error('Invalid ffmpeg PATH'))
+      }
+      if (!ffprobeExists) {
+        return this.emit('error', new Error('Invalid ffprobe PATH'))
+      }
+
+      resolve()
+    })
+
   }
 }

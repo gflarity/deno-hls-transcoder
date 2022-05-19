@@ -1,5 +1,7 @@
 # HLS Transcoder
 
+**THIS PACKAGE IS STILL UNDER ACTIVE DEVELOPMENT, API CHANGES CAN AND LIKELY WILL HAPPEN REGARDLESS OF WETHER THEY ARE DOCUMENTED BELOW**
+
 An FFMPEG Wrapper heavily inspired by [simple-hls](https://github.com/techwarriorz/simple-hls), to transcode Multi-bitrate HLS videos.  
 
 ## Installation:  
@@ -83,8 +85,26 @@ transcodeVideo();
 
 
 ### Setting event handlers
-The `Transcoder` class extends `EventEmitter` and will emit the foll  
+The `Transcoder` class extends `EventEmitter` and will emit the following events:  
+* **'error'**
+* **'stderr'**
+* **'progress'**
+* **'end'**
 
+
+**'error' - transcoding errors**
+```ts
+transcoder.on('error', (err) => {
+  console.error(err)
+})
+```
+
+**'stderr' - information ffmpeg sends via the command line**  
+```ts
+transcoder.on('stderr', (data) => {
+  console.log(data)
+})
+```
 **'progress' - transcoding progress information**
 ```ts
 transcoder.on('progress', (progress) => {
@@ -94,6 +114,14 @@ transcoder.on('progress', (progress) => {
 The progress event is emitted everytime ffmpeg reports progress information. The progress object contains the following keys:  
 * `frame`: total processed frame count
 * `fps`: framerate at which FFmpeg is currenlty processing
+
+**'end' - information about ffmpegs exit status**  
+```ts
+transcoder.on('end', (data) => {
+  console.log(data)
+})
+```
+
 ___
 
 ## Ongoing TODOS:
@@ -101,5 +129,8 @@ ___
 * Add option for outputPath param per Rendition
 * Add option for Renditions per Resolution  
 * Fix ffmpeg stderr and stdout processing / parsing
+  * Currently in progress
+* Test and/or handle .ts file name overflows
+  * ie. '1080p_0.ts' where number of ts segments > 10
 * Create dir automatically if doesn't exist?
 * Option to enable / disable overwrite?

@@ -35,6 +35,45 @@ export function parseProgressLine(line: any, _metadata: VideoMetadata) {
   return progress
 }
 
+/**
+ * Progress data sent to stdout pipe via `-progress pipe:1` is different than when
+ * sent to the stderr command line output with `-progress -`. 
+ * @param line 
+ * @param _metadata 
+ * @returns 
+ */
+export function parseProgressStdout(line: any, _metadata: VideoMetadata) {
+  const progress: any = {}
+
+  // Remove all spaces after = and trim
+  line = line.replace(/=\s+/g, '=').trim()
+  const progressParts = line.split('\n')
+
+  // Split every progress part by "=" to get key and value
+  for (let i = 0; i < progressParts.length; i++) {
+    const progressSplit = progressParts[i].split('=', 2)
+    const key = progressSplit[0]
+    const value = progressSplit[1]
+
+    // This is not a progress line
+    if (typeof value === 'undefined') return null
+
+    progress[key] = value
+  }
+
+  const progressSeconds = timemarkToSeconds(progress["out_time"])
+  const durationSeconds = _metadata.duration ? _metadata.duration : 1
+
+  // Fix for when out_time is greater than duration
+  let progressPct = ((progressSeconds / durationSeconds) * 100)
+  if(progressPct > 100) {
+    progressPct = 100
+  }
+  progress["progress_pct"] = progressPct.toFixed(2)
+
+  return progress
+}
+
 // TODO: implement
 // borrowed from https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
 /**
