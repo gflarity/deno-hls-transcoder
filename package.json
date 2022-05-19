@@ -8,13 +8,17 @@
     "build": "tsc",
     "test": "node -r ts-node/register bin/test.ts"
   },
-  "author": "akatora28",
+  "author": "Adam Katora <adamkatora@gmail.com> (https://github.com/akatora28)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/akatora28/hls-transcoder"
   },
+  "bugs": {
+    "url": "https://github.com/akatora28/hls-transcoder/issues"
+  },
   "homepage": "https://github.com/akatora28/hls-transcoder#readme",
   "license": "ISC",
+  "keywords": ["FFMPEG","HLS","Transcoding","Video","VOD"],
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^1.4.1",
