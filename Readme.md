@@ -83,8 +83,26 @@ transcodeVideo();
 
 
 ### Setting event handlers
-The `Transcoder` class extends `EventEmitter` and will emit the foll  
+The `Transcoder` class extends `EventEmitter` and will emit the following events:  
+* **'error'**
+* **'stderr'**
+* **'progress'**
+* **'end'**
 
+
+**'error' - transcoding errors**
+```ts
+transcoder.on('error', (err) => {
+  console.error(err)
+})
+```
+
+**'stderr' - information ffmpeg sends via the command line**  
+```ts
+transcoder.on('stderr', (data) => {
+  console.log(data)
+})
+```
 **'progress' - transcoding progress information**
 ```ts
 transcoder.on('progress', (progress) => {
@@ -94,6 +112,14 @@ transcoder.on('progress', (progress) => {
 The progress event is emitted everytime ffmpeg reports progress information. The progress object contains the following keys:  
 * `frame`: total processed frame count
 * `fps`: framerate at which FFmpeg is currenlty processing
+
+**'end' - information about ffmpegs exit status**  
+```ts
+transcoder.on('end', (data) => {
+  console.log(data)
+})
+```
+
 ___
 
 ## Ongoing TODOS:
