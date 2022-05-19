@@ -132,5 +132,6 @@ ___
   * Currently in progress
 * Test and/or handle .ts file name overflows
   * ie. '1080p_0.ts' where number of ts segments > 10
+  * Figured out, default behavior is to just keep adding numbers, ie 11, 12, 13 - so this shouldn't be an issue unless there's a use case where a program is expecting the filenames to match a specfic pattern like that
 * Create dir automatically if doesn't exist?
 * Option to enable / disable overwrite?
