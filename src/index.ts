@@ -5,7 +5,7 @@ import fs from 'fs'
 import EventEmitter from 'events'
 import ffprobe from 'ffprobe'
 
-import { parseProgressLine, parseErrorLine, parseProgressStdout } from './utils'
+import { parseProgressStdout } from './utils'
 
 export default class Transcoder extends EventEmitter {
   inputPath: string
@@ -40,7 +40,10 @@ export default class Transcoder extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       const ffmpeg = this.options.ffmpegPath ? spawn(this.options.ffmpegPath, commands) : spawn('ffmpeg', commands)
-
+      
+      /**
+       * stdout processing for progress
+       */
       ffmpeg.stdout.setEncoding('utf8')
       ffmpeg.stdout.on('data', (data: any) => {
         const progressLine = parseProgressStdout(data, this._metadata)
@@ -49,18 +52,19 @@ export default class Transcoder extends EventEmitter {
         }
       })
 
+      /**
+       * stderr processing for all other ffmpeg information
+       */
       ffmpeg.stderr.setEncoding('utf8')
       ffmpeg.stderr.on('data', (data: any) => {
-        /* TODO - this needs to be reimplemented
-        const errorLine = parseErrorLine(data)
-        if (errorLine) {
-          this.emit('error', errorLine)
-        }
-        */
+        this.emit('stderr', data)
+      })
+      ffmpeg.stderr.on('error', (err: any) => {
+        this.emit('error', err)
       })
 
       ffmpeg.on('exit', (code: any) => {
-        // console.log(`FFMPEG exited with code ${code}`)
+        this.emit('end', (`FFMPEG exited with code ${code}`))
         if (code === 0) return resolve(masterPlaylist)
       })
     })
@@ -70,8 +74,7 @@ export default class Transcoder extends EventEmitter {
     return new Promise((resolve) => {
       let commands: Array<string> = [
         '-hide_banner',
-        '-progress',
-        //'pipe:1', // send to stdout - sends every second
+        '-progress', // TODO make progress optional?
         `-`,
         '-loglevel',
         'repeat+error',
