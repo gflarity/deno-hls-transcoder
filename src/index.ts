@@ -1,4 +1,4 @@
-import { HLSTranscoderOptions, _HLSTranscoderOptions, VideoMetadata } from './types'
+import { HLSTranscoderOptions, _HLSTranscoderOptions, VideoMetadata, RenditionOptions } from './types'
 import { spawn } from 'child_process'
 import fs from 'fs'
 import EventEmitter from 'events'
@@ -17,6 +17,7 @@ export default class Transcoder extends EventEmitter {
 
   private _metadata: VideoMetadata = {}
   private _options: _HLSTranscoderOptions
+  private _renditions?: Array<RenditionOptions>
 
   constructor(inputPath: string, outputPath: string, options: HLSTranscoderOptions = {}) {
     super()
@@ -30,6 +31,8 @@ export default class Transcoder extends EventEmitter {
   public async transcode() {
     await this.validatePaths(this._options.ffmpegPath, this._options.ffprobePath)
     await this.setMetadata(this._options)
+
+    this.generateRenditions()
 
     let commands: Array<string>
     try {
@@ -222,5 +225,33 @@ export default class Transcoder extends EventEmitter {
 
       resolve()
     })
+  }
+
+  /**
+   * TODO - rewrite description, but this generates a renditions object based off the supplied renditions object
+   * and the supplied options, aka upscaling etc.
+   */
+  private generateRenditions(): void {
+    // User renditions will be stored in _options.renditions
+    const _renditions: Array<RenditionOptions>  = []
+
+    // Calculate number of pixels in video ie width*height
+    if(!this._metadata.width || !this._metadata.height) {
+      throw this.emit('error', new Error('Invalid metadata height or width'))
+    }
+    const videoResolution = this._metadata.width * this._metadata.height
+
+    // Logic check for upscaling?
+    // if(this._options.allowUpscaling)
+
+    for (let i = 0, len = this._options.renditions.length; i < len; i++) {
+      const renditionResolution = this._options.renditions[i].width * this._options.renditions[i].height
+      if(renditionResolution <= videoResolution) {
+        _renditions.push(this._options.renditions[i])
+      }
+    }
+
+    this._renditions = _renditions
+    return
   }
 }
