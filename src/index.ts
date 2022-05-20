@@ -92,7 +92,12 @@ export default class Transcoder extends EventEmitter {
         '-i',
         this.inputPath
       ]
-      const renditions = this.options.renditions || DefaultRenditions
+      let renditions
+      if(this._renditions) {
+        renditions = this._renditions
+      } else {
+        throw this.emit('error', new Error('Invalid renditions'))
+      }
 
       for (let i = 0, len = renditions.length; i < len; i++) {
         const r = renditions[i]
@@ -235,14 +240,16 @@ export default class Transcoder extends EventEmitter {
     // User renditions will be stored in _options.renditions
     const _renditions: Array<RenditionOptions>  = []
 
+    if(this._options.allowUpscaling) {
+      this._renditions = this._options.renditions
+      return
+    }
+
     // Calculate number of pixels in video ie width*height
     if(!this._metadata.width || !this._metadata.height) {
       throw this.emit('error', new Error('Invalid metadata height or width'))
     }
     const videoResolution = this._metadata.width * this._metadata.height
-
-    // Logic check for upscaling?
-    // if(this._options.allowUpscaling)
 
     for (let i = 0, len = this._options.renditions.length; i < len; i++) {
       const renditionResolution = this._options.renditions[i].width * this._options.renditions[i].height
