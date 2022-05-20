@@ -1,20 +1,20 @@
-import Transcoder from ".";
-import { HLSTranscoderOptions } from "./types";
+import Transcoder from '.'
+import { HLSTranscoderOptions, _HLSTranscoderOptions } from './types'
 
-import DefaultRenditions from "./default-renditions";
+import DefaultOptions from './default-options'
 
 /**
  * Check what (if any) options the user has supplied, otherwise fallback
  * to default values
- * @param options 
+ * @param options
  */
-function setOptions(this: Transcoder, options?: HLSTranscoderOptions): HLSTranscoderOptions {
-  const outputOptions: HLSTranscoderOptions = {}
+export function setOptions(this: any, options?: HLSTranscoderOptions): _HLSTranscoderOptions {
+  let _options: any = {}
 
-  outputOptions.allowUpscaling = options?.allowUpscaling ? options.allowUpscaling : false
-  outputOptions.ffmpegPath = options?.ffmpegPath ? options.ffmpegPath : 'ffmpeg'
-  outputOptions.ffprobePath = options?.ffprobePath ? options.ffprobePath : 'ffprobe'
-  outputOptions.renditions = options?.renditions ? options.renditions : DefaultRenditions // TODO import default
+  _options.allowUpscaling = options?.allowUpscaling ? options.allowUpscaling : DefaultOptions.allowUpscaling
+  _options.ffmpegPath = options?.ffmpegPath ? options.ffmpegPath : DefaultOptions.ffmpegPath
+  _options.ffprobePath = options?.ffprobePath ? options.ffprobePath : DefaultOptions.ffprobePath
+  _options.renditions = options?.renditions ? options.renditions : DefaultOptions.renditions
 
-  return outputOptions
+  return _options
 }
