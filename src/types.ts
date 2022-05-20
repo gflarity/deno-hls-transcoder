@@ -1,5 +1,3 @@
-import EventEmitter from 'events'
-
 export interface HLSTranscoderOptions {
   allowUpscaling?: boolean
   ffmpegPath?: string
