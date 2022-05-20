@@ -83,6 +83,26 @@ transcodeVideo()
 
 ## Documentation:
 
+### Options  
+When creating a new instance of the `Transcoder` class, you can supply a third parameter `options` as an object which will override the default behaviour / settings of hls-transcoder. The possible options and their default values are as follows:  
+
+- **allowUpscaling**
+  - Description: When set to `false` renditions will only be transcoded if the original video is the same resolution or higher than that of the rendition being transcoded. When set to `true` 
+  - Default: `false`
+  - Type: boolean | undefined
+- **ffmpegPath**
+  - Description: Allows specifying which PATH hls-transcoder should use when invoking an `ffmpeg` child_process
+  - Default: `ffmpeg`
+  - Type: string | undefined
+- **ffprobePath**
+  - Description: Allows specifying which PATH hls-transcoder should use when invoking an `ffprobe` child_process
+  - Default: `ffprobe`
+  - Type: string | undefined  
+- **renditions**
+  - Description: The various resolutions and bitrates hls-transcoder will use when transcoding video files
+  - Default: [See default renditions](#TODO)
+  - Type: RenditionOptions | undefined
+
 ### Setting event handlers
 
 The `Transcoder` class extends `EventEmitter` and will emit the following events:
