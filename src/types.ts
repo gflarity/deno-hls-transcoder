@@ -27,7 +27,7 @@ export interface RenditionOptions {
 
 export interface VideoMetadata {
   codec_name?: string
-  width?: number
-  height?: number
   duration?: number
+  height?: number
+  width?: number
 }
