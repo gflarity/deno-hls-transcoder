@@ -1,7 +1,15 @@
 export interface HLSTranscoderOptions {
+  allowUpscaling?: boolean
   ffmpegPath?: string
   ffprobePath?: string
   renditions?: Array<RenditionOptions>
+}
+// Non-optional for _options property
+export interface _HLSTranscoderOptions {
+  allowUpscaling: boolean
+  ffmpegPath: string
+  ffprobePath: string
+  renditions: Array<RenditionOptions>
 }
 
 export interface RenditionOptions {

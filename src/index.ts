@@ -1,11 +1,11 @@
-import { HLSTranscoderOptions, VideoMetadata } from './types'
+import { HLSTranscoderOptions, _HLSTranscoderOptions, VideoMetadata } from './types'
 import { spawn } from 'child_process'
 import DefaultRenditions from './default-renditions'
 import fs from 'fs'
 import EventEmitter from 'events'
 import ffprobe from 'ffprobe'
-import commandExists from 'command-exists'
 
+import { setOptions, validatePaths } from './methods'
 import { parseProgressStdout } from './utils'
 
 export default class Transcoder extends EventEmitter {
@@ -14,15 +14,20 @@ export default class Transcoder extends EventEmitter {
   options: HLSTranscoderOptions
 
   private _metadata: VideoMetadata = {}
+  private _options: _HLSTranscoderOptions
 
   constructor(inputPath: string, outputPath: string, options: HLSTranscoderOptions = {}) {
     super()
     this.inputPath = inputPath
     this.outputPath = outputPath
     this.options = options
+
+    this._options = setOptions(this.options)
   }
 
   public async transcode() {
+    await validatePaths(this._options.ffmpegPath, this._options.ffprobePath)
+
     let commands: Array<string>
     try {
       commands = await this.buildCommands()
@@ -37,17 +42,12 @@ export default class Transcoder extends EventEmitter {
       return err
     }
 
-    // This is hideous - fix later possibly via a private property object
-    await this.validatePaths(
-      this.options.ffmpegPath ? this.options.ffmpegPath : 'ffmpeg', 
-      this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe',
-    )
-
+    // Move this to initializer
     await this.setMetadata()
 
     return new Promise((resolve, reject) => {
       const ffmpeg = this.options.ffmpegPath ? spawn(this.options.ffmpegPath, commands) : spawn('ffmpeg', commands)
-      
+
       /**
        * stdout processing for progress
        */
@@ -71,7 +71,7 @@ export default class Transcoder extends EventEmitter {
       })
 
       ffmpeg.on('exit', (code: any) => {
-        this.emit('end', (`FFMPEG exited with code ${code}`))
+        this.emit('end', `FFMPEG exited with code ${code}`)
         if (code === 0) return resolve(masterPlaylist)
       })
     })
@@ -152,7 +152,7 @@ export default class Transcoder extends EventEmitter {
   }
 
   private async setMetadata(): Promise<void> {
-    const ffprobePath = this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe';
+    const ffprobePath = this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe'
     let ffprobeData: ffprobe.FFProbeResult
     try {
       ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
@@ -162,40 +162,14 @@ export default class Transcoder extends EventEmitter {
     // const ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
 
     return new Promise((resolve) => {
-      if(ffprobeData.streams[0].codec_name) {
+      if (ffprobeData.streams[0].codec_name) {
         this._metadata.codec_name = ffprobeData.streams[0].codec_name
       }
-      if(ffprobeData.streams[0].duration) {
+      if (ffprobeData.streams[0].duration) {
         this._metadata.duration = ffprobeData.streams[0].duration
       }
-    
-      resolve()
-    })
-  }
-
-  /**
-   * Validates that the supplied ffmpegPath and ffprobePaths exist 
-   * @param ffmpegPath 
-   * @param ffprobePath 
-   * @returns void
-   */
-  private async validatePaths(ffmpegPath: string, ffprobePath: string): Promise<void> {
-    const ffmpegExists = await commandExists(ffmpegPath).catch(() => {return})
-    const ffprobeExists = await commandExists(ffprobePath).catch(() => {return})
-
-    return new Promise((resolve) => {
-      if (!ffmpegExists && !ffprobeExists) {
-        return this.emit('error', new Error('Invalid ffmpeg and ffprobe PATH'))
-      }
-      if (!ffmpegExists) {
-        return this.emit('error', new Error('Invalid ffmpeg PATH'))
-      }
-      if (!ffprobeExists) {
-        return this.emit('error', new Error('Invalid ffprobe PATH'))
-      }
 
       resolve()
     })
-
   }
 }
