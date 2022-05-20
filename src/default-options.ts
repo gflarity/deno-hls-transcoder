@@ -1,7 +1,7 @@
-import { HLSTranscoderOptions } from './types'
+import { _HLSTranscoderOptions } from './types'
 import DefaultRenditions from './default-renditions'
 
-const DefaultOptions: HLSTranscoderOptions = {
+const DefaultOptions: _HLSTranscoderOptions = {
   ffmpegPath: 'ffmpeg',
   ffprobePath: 'ffprobe',
   renditions: DefaultRenditions,
