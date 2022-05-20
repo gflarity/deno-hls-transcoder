@@ -4,9 +4,8 @@ import DefaultRenditions from './default-renditions'
 import fs from 'fs'
 import EventEmitter from 'events'
 import ffprobe from 'ffprobe'
-import commandExists from 'command-exists'
 
-import { setOptions } from './methods'
+import { setOptions, validatePaths } from './methods'
 import { parseProgressStdout } from './utils'
 
 export default class Transcoder extends EventEmitter {
@@ -27,7 +26,7 @@ export default class Transcoder extends EventEmitter {
   }
 
   public async transcode() {
-    await this.validatePaths(this._options.ffmpegPath, this._options.ffprobePath)
+    await validatePaths(this._options.ffmpegPath, this._options.ffprobePath)
 
     let commands: Array<string>
     try {
@@ -168,35 +167,6 @@ export default class Transcoder extends EventEmitter {
       }
       if (ffprobeData.streams[0].duration) {
         this._metadata.duration = ffprobeData.streams[0].duration
-      }
-
-      resolve()
-    })
-  }
-
-  /**
-   * Validates that the supplied ffmpegPath and ffprobePaths exist
-   * @param ffmpegPath
-   * @param ffprobePath
-   * @returns void
-   */
-  private async validatePaths(ffmpegPath: string, ffprobePath: string): Promise<void> {
-    const ffmpegExists = await commandExists(ffmpegPath).catch(() => {
-      return
-    })
-    const ffprobeExists = await commandExists(ffprobePath).catch(() => {
-      return
-    })
-
-    return new Promise((resolve) => {
-      if (!ffmpegExists && !ffprobeExists) {
-        return this.emit('error', new Error('Invalid ffmpeg and ffprobe PATH'))
-      }
-      if (!ffmpegExists) {
-        return this.emit('error', new Error('Invalid ffmpeg PATH'))
-      }
-      if (!ffprobeExists) {
-        return this.emit('error', new Error('Invalid ffprobe PATH'))
       }
 
       resolve()

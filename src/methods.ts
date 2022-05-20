@@ -1,4 +1,5 @@
-import Transcoder from '.'
+// import Transcoder from '.'
+import commandExists from 'command-exists'
 import { HLSTranscoderOptions, _HLSTranscoderOptions } from './types'
 
 import DefaultOptions from './default-options'
@@ -17,4 +18,33 @@ export function setOptions(this: any, options?: HLSTranscoderOptions): _HLSTrans
   _options.renditions = options?.renditions ? options.renditions : DefaultOptions.renditions
 
   return _options
+}
+
+/**
+ * Validates that the supplied ffmpegPath and ffprobePaths exist
+ * @param ffmpegPath
+ * @param ffprobePath
+ * @returns void
+ */
+export async function validatePaths(this: any, ffmpegPath: string, ffprobePath: string): Promise<void> {
+  const ffmpegExists = await commandExists(ffmpegPath).catch(() => {
+    return
+  })
+  const ffprobeExists = await commandExists(ffprobePath).catch(() => {
+    return
+  })
+
+  return new Promise((resolve) => {
+    if (!ffmpegExists && !ffprobeExists) {
+      return this.emit('error', new Error('Invalid ffmpeg and ffprobe PATH'))
+    }
+    if (!ffmpegExists) {
+      return this.emit('error', new Error('Invalid ffmpeg PATH'))
+    }
+    if (!ffprobeExists) {
+      return this.emit('error', new Error('Invalid ffprobe PATH'))
+    }
+
+    resolve()
+  })
 }
