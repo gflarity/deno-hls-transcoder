@@ -14,7 +14,7 @@ const DefaultRenditions: Array<RenditionOptions> = [
       master_title: '360p'
   },
   {
-      width: 842,
+      width: 720,
       height: 480,
       profile: 'main',
       hlsTime: 4,
