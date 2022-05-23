@@ -103,7 +103,8 @@ export default class Transcoder extends EventEmitter {
         const r = renditions[i]
         commands = commands.concat([
           '-vf',
-          `scale=w=${r.width}:h=${r.height}:force_original_aspect_ratio=decrease`,
+          // `scale=w=${r.width}:h=${r.height}:force_original_aspect_ratio=decrease`,
+          `scale=${r.width}:-1`, // Scale based on width
           '-c:a',
           'aac',
           '-ar',
