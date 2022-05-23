@@ -5,6 +5,7 @@ const MultiResRenditions1080 = [
     hlsTime: 4,
     master_title: '360p',
     profile: 'main', // profile here?
+    outputDir: `${__dirname}/output/360p`,
     renditions: [
       {
         profile: 'main', // or profile here?
@@ -26,8 +27,9 @@ const MultiResRenditions1080 = [
     width: 720,
     height: 480,
     hlsTime: 4,
-    master_title: '360p',
+    master_title: '480p',
     profile: 'main',
+    outputDir: `${__dirname}/output/480p`,
     renditions: [
       {
         profile: 'main',
