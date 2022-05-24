@@ -13,6 +13,10 @@ export async function clearOutputFolder(): Promise<void> {
 
     for(const file of files) {
       fs.unlink(path.join(directory, file), err => {
+        if (err && err.code === 'ENOENT') {
+          // No file to unlink, just return
+          return
+        }
         if (err) throw err;
       })
     }
