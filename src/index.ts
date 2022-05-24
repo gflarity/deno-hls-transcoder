@@ -144,7 +144,10 @@ export default class Transcoder extends EventEmitter {
     return new Promise((resolve) => {
       let m3u8Playlist = `#EXTM3U\n#EXT-X-VERSION:3\n`
 
-      const renditions = this.options.renditions || DefaultRenditions
+      const renditions = this._renditions
+      if(!renditions) {
+        throw new Error('Invalid renditions')
+      }
 
       for (let i = 0, len = renditions.length; i < len; i++) {
         const r = renditions[i]
