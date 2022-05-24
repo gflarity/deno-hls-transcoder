@@ -164,3 +164,4 @@ transcoder.on('end', (data) => {
 - Create dir automatically if doesn't exist?
   - Should do this, right now it fails silently if output dir doesn't exist
 - Option to enable / disable overwrite?
+- Invalid dimensions for renditions appear to fail silently
