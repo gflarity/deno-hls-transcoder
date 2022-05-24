@@ -1,10 +1,12 @@
-import { HLSTranscoderOptions, VideoMetadata } from './types'
+import { HLSTranscoderOptions, _HLSTranscoderOptions, VideoMetadata, RenditionOptions } from './types'
 import { spawn } from 'child_process'
-import DefaultRenditions from './default-renditions'
 import fs from 'fs'
 import EventEmitter from 'events'
 import ffprobe from 'ffprobe'
 import commandExists from 'command-exists'
+
+import DefaultRenditions from './default-renditions'
+import DefaultOptions from './default-options'
 
 import { parseProgressStdout } from './utils'
 
@@ -14,15 +16,26 @@ export default class Transcoder extends EventEmitter {
   options: HLSTranscoderOptions
 
   private _metadata: VideoMetadata = {}
+  private _options: _HLSTranscoderOptions
+  private _renditions?: Array<RenditionOptions>
 
   constructor(inputPath: string, outputPath: string, options: HLSTranscoderOptions = {}) {
     super()
     this.inputPath = inputPath
     this.outputPath = outputPath
     this.options = options
+
+    this._options = this.setOptions(this.options)
   }
 
   public async transcode() {
+    await this.validatePaths(this._options.ffmpegPath, this._options.ffprobePath)
+    await this.setMetadata(this._options)
+    
+    await this.generateOutputDir()
+
+    this.generateRenditions()
+
     let commands: Array<string>
     try {
       commands = await this.buildCommands()
@@ -37,17 +50,9 @@ export default class Transcoder extends EventEmitter {
       return err
     }
 
-    // This is hideous - fix later possibly via a private property object
-    await this.validatePaths(
-      this.options.ffmpegPath ? this.options.ffmpegPath : 'ffmpeg', 
-      this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe',
-    )
-
-    await this.setMetadata()
-
     return new Promise((resolve, reject) => {
       const ffmpeg = this.options.ffmpegPath ? spawn(this.options.ffmpegPath, commands) : spawn('ffmpeg', commands)
-      
+
       /**
        * stdout processing for progress
        */
@@ -71,7 +76,7 @@ export default class Transcoder extends EventEmitter {
       })
 
       ffmpeg.on('exit', (code: any) => {
-        this.emit('end', (`FFMPEG exited with code ${code}`))
+        this.emit('end', `FFMPEG exited with code ${code}`)
         if (code === 0) return resolve(masterPlaylist)
       })
     })
@@ -89,7 +94,12 @@ export default class Transcoder extends EventEmitter {
         '-i',
         this.inputPath
       ]
-      const renditions = this.options.renditions || DefaultRenditions
+      let renditions
+      if(this._renditions) {
+        renditions = this._renditions
+      } else {
+        throw this.emit('error', new Error('Invalid renditions'))
+      }
 
       for (let i = 0, len = renditions.length; i < len; i++) {
         const r = renditions[i]
@@ -136,7 +146,10 @@ export default class Transcoder extends EventEmitter {
     return new Promise((resolve) => {
       let m3u8Playlist = `#EXTM3U\n#EXT-X-VERSION:3\n`
 
-      const renditions = this.options.renditions || DefaultRenditions
+      const renditions = this._renditions
+      if(!renditions) {
+        throw new Error('Invalid renditions')
+      }
 
       for (let i = 0, len = renditions.length; i < len; i++) {
         const r = renditions[i]
@@ -151,37 +164,64 @@ export default class Transcoder extends EventEmitter {
     })
   }
 
-  private async setMetadata(): Promise<void> {
-    const ffprobePath = this.options.ffprobePath ? this.options.ffprobePath : 'ffprobe';
+  /**
+   * Check what (if any) options the user has supplied, otherwise fallback
+   * to default values
+   * @param options
+   */
+  private setOptions(options?: HLSTranscoderOptions): _HLSTranscoderOptions {
+    const _options: any = {}
+
+    _options.allowUpscaling = options?.allowUpscaling ? options.allowUpscaling : DefaultOptions.allowUpscaling
+    _options.ffmpegPath = options?.ffmpegPath ? options.ffmpegPath : DefaultOptions.ffmpegPath
+    _options.ffprobePath = options?.ffprobePath ? options.ffprobePath : DefaultOptions.ffprobePath
+    _options.renditions = options?.renditions ? options.renditions : DefaultOptions.renditions
+
+    return _options
+  }
+
+  /**
+   * Runs `ffprobe` on the input video file to gather video metadata
+   * @param _options 
+   * @param inputPath 
+   */
+  private async setMetadata(this: any, _options: _HLSTranscoderOptions): Promise<void> {
     let ffprobeData: ffprobe.FFProbeResult
     try {
-      ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
-    } catch (err) {
-      throw new Error()
+      ffprobeData = await ffprobe(this.inputPath, { path: _options.ffprobePath})
+    } catch (err: any) {
+      return this.emit('error', new Error(err))
+      // throw new Error()
     }
-    // const ffprobeData = await ffprobe(this.inputPath, { path: ffprobePath })
+    
+    const _metadata: VideoMetadata = {
+      codec_name: ffprobeData.streams[0].codec_name,
+      duration: ffprobeData.streams[0].duration,
+      height: ffprobeData.streams[0].height,
+      width: ffprobeData.streams[0].width,
+      sample_aspect_ratio: ffprobeData.streams[0].sample_aspect_ratio
+    }
+
+    this._metadata = _metadata
 
     return new Promise((resolve) => {
-      if(ffprobeData.streams[0].codec_name) {
-        this._metadata.codec_name = ffprobeData.streams[0].codec_name
-      }
-      if(ffprobeData.streams[0].duration) {
-        this._metadata.duration = ffprobeData.streams[0].duration
-      }
-    
       resolve()
     })
   }
 
   /**
-   * Validates that the supplied ffmpegPath and ffprobePaths exist 
-   * @param ffmpegPath 
-   * @param ffprobePath 
+   * Validates that the supplied ffmpegPath and ffprobePaths exist
+   * @param ffmpegPath
+   * @param ffprobePath
    * @returns void
    */
   private async validatePaths(ffmpegPath: string, ffprobePath: string): Promise<void> {
-    const ffmpegExists = await commandExists(ffmpegPath).catch(() => {return})
-    const ffprobeExists = await commandExists(ffprobePath).catch(() => {return})
+    const ffmpegExists = await commandExists(ffmpegPath).catch(() => {
+      return
+    })
+    const ffprobeExists = await commandExists(ffprobePath).catch(() => {
+      return
+    })
 
     return new Promise((resolve) => {
       if (!ffmpegExists && !ffprobeExists) {
@@ -196,6 +236,51 @@ export default class Transcoder extends EventEmitter {
 
       resolve()
     })
+  }
 
+  /**
+   * TODO - rewrite description, but this generates a renditions object based off the supplied renditions object
+   * and the supplied options, aka upscaling etc.
+   */
+  private generateRenditions(): void {
+    // User renditions will be stored in _options.renditions
+    const _renditions: Array<RenditionOptions>  = []
+
+    if(this._options.allowUpscaling) {
+      this._renditions = this._options.renditions
+      return
+    }
+
+    // Calculate number of pixels in video ie width*height
+    if(!this._metadata.width || !this._metadata.height) {
+      throw this.emit('error', new Error('Invalid metadata height or width'))
+    }
+    // Get SAR (Sample Aspect Ratio) to multiply videoResolution by
+    if(!this._metadata.sample_aspect_ratio) {
+      throw new Error('Metadata error')
+    }
+    const sampleAspectRatio = parseInt(this._metadata.sample_aspect_ratio.split(':')[0]) / parseInt(this._metadata.sample_aspect_ratio.split(':')[1])
+    const videoResolution = this._metadata.width * this._metadata.height * sampleAspectRatio
+
+    for (let i = 0, len = this._options.renditions.length; i < len; i++) {
+      const renditionResolution = (this._options.renditions[i].width * this._options.renditions[i].height * 0.90)
+      if(renditionResolution <= videoResolution) {
+        _renditions.push(this._options.renditions[i])
+      }
+    }
+
+    this._renditions = _renditions
+    return
+  }
+
+  private async generateOutputDir(): Promise<void> {
+    // TODO - loop check if this.outputPath exists
+    // console.log({outputPath: this.outputPath})
+    return new Promise((resolve) => {
+      if (!fs.existsSync(this.outputPath)) {
+        fs.mkdirSync(this.outputPath, { recursive: true });
+      }
+      resolve()
+    })
   }
 }
