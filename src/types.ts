@@ -30,4 +30,5 @@ export interface VideoMetadata {
   duration?: number
   height?: number
   width?: number
+  sample_aspect_ratio?: string
 }
