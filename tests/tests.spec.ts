@@ -38,3 +38,32 @@ test.group('Transcode.default', async () => {
       await clearOutputFolder()
     })
 })
+
+//
+test.group('Transcode.default', async () => {
+  test('transcode vertical video default renditions', async ({ assert }) => {
+    // Test logic goes here
+    const transcoder = new Transcoder(
+      `tests/videos/BigBuckBunny1x1-1080p30s.mp4`,
+      `${__dirname}/output`,
+      {
+        ffmpegPath: ffmpeg.path,
+        ffprobePath: ffprobe.path,
+      }
+    )
+
+    transcoder.on('error', (err) => {
+      console.error(err)
+      throw err
+    })
+
+    await transcoder.transcode()
+  
+    // assert.equal(2 + 2, 4)
+  }).setup(async () => {
+      await clearOutputFolder()
+    })
+    .teardown(async () => {
+      await clearOutputFolder()
+    })
+})
