@@ -196,7 +196,8 @@ export default class Transcoder extends EventEmitter {
       codec_name: ffprobeData.streams[0].codec_name,
       duration: ffprobeData.streams[0].duration,
       height: ffprobeData.streams[0].height,
-      width: ffprobeData.streams[0].width
+      width: ffprobeData.streams[0].width,
+      sample_aspect_ratio: ffprobeData.streams[0].sample_aspect_ratio
     }
 
     this._metadata = _metadata
@@ -252,10 +253,15 @@ export default class Transcoder extends EventEmitter {
     if(!this._metadata.width || !this._metadata.height) {
       throw this.emit('error', new Error('Invalid metadata height or width'))
     }
-    const videoResolution = this._metadata.width * this._metadata.height
+    // Get SAR (Sample Aspect Ratio) to multiply videoResolution by
+    if(!this._metadata.sample_aspect_ratio) {
+      throw new Error('Metadata error')
+    }
+    const sampleAspectRatio = parseInt(this._metadata.sample_aspect_ratio.split(':')[0]) / parseInt(this._metadata.sample_aspect_ratio.split(':')[1])
+    const videoResolution = this._metadata.width * this._metadata.height * sampleAspectRatio
 
     for (let i = 0, len = this._options.renditions.length; i < len; i++) {
-      const renditionResolution = this._options.renditions[i].width * this._options.renditions[i].height
+      const renditionResolution = (this._options.renditions[i].width * this._options.renditions[i].height * 0.90)
       if(renditionResolution <= videoResolution) {
         _renditions.push(this._options.renditions[i])
       }
