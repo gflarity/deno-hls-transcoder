@@ -31,6 +31,8 @@ export default class Transcoder extends EventEmitter {
   public async transcode() {
     await this.validatePaths(this._options.ffmpegPath, this._options.ffprobePath)
     await this.setMetadata(this._options)
+    
+    await this.generateOutputDir()
 
     this.generateRenditions()
 
@@ -269,5 +271,16 @@ export default class Transcoder extends EventEmitter {
 
     this._renditions = _renditions
     return
+  }
+
+  private async generateOutputDir(): Promise<void> {
+    // TODO - loop check if this.outputPath exists
+    // console.log({outputPath: this.outputPath})
+    return new Promise((resolve) => {
+      if (!fs.existsSync(this.outputPath)) {
+        fs.mkdirSync(this.outputPath, { recursive: true });
+      }
+      resolve()
+    })
   }
 }
