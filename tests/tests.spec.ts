@@ -1,11 +1,11 @@
 import { test } from '@japa/runner'
 
-import Transcoder  from '../src/index'
+import Transcoder  from '../src/index.ts'
 import ffmpeg from '@ffmpeg-installer/ffmpeg'
 const ffprobe = require('@ffprobe-installer/ffprobe')
 import * as fs from 'fs'
 
-import { clearOutputFolder } from './_test.utils'
+import { clearOutputFolder } from './_test.utils.ts'
 
 // What tests to do
 // test .mov, .avi, etc

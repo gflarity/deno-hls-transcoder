@@ -1,4 +1,4 @@
-import { RenditionOptions } from "./types"
+import { RenditionOptions } from "./types.ts"
 
 const DefaultRenditions: Array<RenditionOptions> = [
     {

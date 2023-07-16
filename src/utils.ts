@@ -1,4 +1,4 @@
-import { VideoMetadata } from "./types"
+import { VideoMetadata } from "./types.ts"
 
 // borrowed from https://github.com/fluent-ffmpeg/node-fluent-ffmpeg
 /**

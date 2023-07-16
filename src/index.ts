@@ -1,14 +1,14 @@
-import { HLSTranscoderOptions, _HLSTranscoderOptions, VideoMetadata, RenditionOptions } from './types'
+import { HLSTranscoderOptions, _HLSTranscoderOptions, VideoMetadata, RenditionOptions } from './types.ts'
 import { spawn } from 'child_process'
 import fs from 'fs'
 import EventEmitter from 'events'
 import ffprobe from 'ffprobe'
 import commandExists from 'command-exists'
 
-import DefaultRenditions from './default-renditions'
-import DefaultOptions from './default-options'
+import DefaultRenditions from './default-renditions.ts'
+import DefaultOptions from './default-options.ts'
 
-import { parseProgressStdout } from './utils'
+import { parseProgressStdout } from './utils.ts'
 
 export default class Transcoder extends EventEmitter {
   inputPath: string
