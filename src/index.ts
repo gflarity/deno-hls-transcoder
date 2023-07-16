@@ -1,12 +1,11 @@
-import { HLSTranscoderOptions, _HLSTranscoderOptions, VideoMetadata, RenditionOptions } from './types.ts'
-
-import { EventEmitter } from "https://deno.land/x/eventemitter@1.2.4/mod.ts";
 import * as fs from "https://deno.land/std@0.194.0/fs/mod.ts";
+import { EventEmitter } from "https://deno.land/x/eventemitter@1.2.4/mod.ts";
+import commandExists from 'npm:command-exists';
 import ffprobe from "npm:ffprobe@1.1.2";
-import commandExists from 'npm:command-exists'
-import DefaultOptions from './default-options.ts'
+import DefaultOptions from './default-options.ts';
+import { HLSTranscoderOptions, RenditionOptions, VideoMetadata, _HLSTranscoderOptions } from './types.ts';
 
-import { parseProgressStdout } from './utils.ts'
+import { parseProgressStdout } from './utils.ts';
 
 export default class Transcoder extends EventEmitter<{ progress(progress: any):void, stderr(stderr: any): void, error(error: Error): void}> {
   inputPath: string
