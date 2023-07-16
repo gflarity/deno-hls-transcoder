@@ -1,6 +1,6 @@
-import { assert } from '@japa/assert'
-import { specReporter } from '@japa/spec-reporter'
-import { processCliArgs, configure, run } from '@japa/runner'
+import { assert } from 'npm:@japa/assert'
+import { specReporter } from 'npm:@japa/spec-reporter'
+import { processCliArgs, configure, run } from 'npm:@japa/runner'
 
 /*
 |--------------------------------------------------------------------------
@@ -16,7 +16,7 @@ import { processCliArgs, configure, run } from '@japa/runner'
 | Please consult japa.dev/runner-config for the config docs.
 */
 configure({
-  ...processCliArgs(process.argv.slice(2)),
+  ...processCliArgs(Deno.args),
   ...{
     files: ['tests/**/*.spec.ts'],
     plugins: [assert()],

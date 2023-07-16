@@ -1,16 +1,14 @@
 import { HLSTranscoderOptions, _HLSTranscoderOptions, VideoMetadata, RenditionOptions } from './types.ts'
-import { spawn } from 'child_process'
-import fs from 'fs'
-import EventEmitter from 'events'
-import ffprobe from 'ffprobe'
-import commandExists from 'command-exists'
 
-import DefaultRenditions from './default-renditions.ts'
+import { EventEmitter } from "https://deno.land/x/eventemitter@1.2.4/mod.ts";
+import * as fs from "https://deno.land/std@0.194.0/fs/mod.ts";
+import ffprobe from "npm:ffprobe@1.1.2";
+import commandExists from 'npm:command-exists'
 import DefaultOptions from './default-options.ts'
 
 import { parseProgressStdout } from './utils.ts'
 
-export default class Transcoder extends EventEmitter {
+export default class Transcoder extends EventEmitter<{ progress(progress: any):void, stderr(stderr: any): void, error(error: Error): void}> {
   inputPath: string
   outputPath: string
   options: HLSTranscoderOptions
@@ -158,8 +156,7 @@ export default class Transcoder extends EventEmitter {
       }
 
       const m3u8Path = `${this.outputPath}/index.m3u8`
-      fs.writeFileSync(m3u8Path, m3u8Playlist)
-
+      Deno.writeFileSync(m3u8Path, new TextEncoder().encode(m3u8Playlist))
       resolve(m3u8Path)
     })
   }
@@ -278,7 +275,7 @@ export default class Transcoder extends EventEmitter {
     // console.log({outputPath: this.outputPath})
     return new Promise((resolve) => {
       if (!fs.existsSync(this.outputPath)) {
-        fs.mkdirSync(this.outputPath, { recursive: true });
+        Deno.mkdirSync(this.outputPath, { recursive: true });
       }
       resolve()
     })
